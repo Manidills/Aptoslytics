@@ -27,142 +27,11 @@ def generate_summary(df):
     st.write(chat_bot(prompt))
 
 
-def create_account_transactions_graph():
-    # User input for the query parameters
-    limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
-    offset = st.number_input("Offset for records", min_value=0, value=10)
-    submit_button = st.button('Submit')
-
-    if submit_button:
-        # Constructing the query with user input
-        query = f"""
-        {{
-          account_transactions(limit: {limit}, offset: {offset}) {{
-            transaction_version
-            user_transaction {{
-              entry_function_id_str
-              block_height
-              epoch
-              expiration_timestamp_secs
-              gas_unit_price
-              max_gas_amount
-              parent_signature_type
-              sender
-              sequence_number
-              timestamp
-              version
-            }}
-            coin_activities {{
-              activity_type
-              amount
-              block_height
-              coin_type
-              entry_function_id_str
-              event_account_address
-              event_creation_number
-            }}
-            token_activities(limit: 10, offset: 10) {{
-              coin_amount
-              coin_type
-              collection_data_id_hash
-              collection_name
-              creator_address
-              current_token_data {{
-                collection_data_id_hash
-                collection_name
-                token_data_id_hash
-              }}
-              from_address
-              to_address
-              name
-              token_amount
-              token_data_id_hash
-            }}
-            fungible_asset_activities(offset: 10, limit: 10) {{
-              amount
-              asset_type
-              event_index
-              entry_function_id_str
-              token_standard
-              storage_id
-            }}
-          }}
-        }}
-        """
-
-        # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
-        response = requests.post(url, json={'query': query})
-
-        if response.status_code == 200:
-            data = response.json()['data']
-            st.dataframe(data['account_transactions'])
-
-            st.markdown("## Summary")
-            generate_summary(pd.DataFrame(data['account_transactions']))
-            st.markdown("##")
-        else:
-            raise Exception(f"Query failed to run by returning code of {response.status_code}. {query}")
-
-        # Extracting data for nodes and edges
-        nodes = []
-        edges = []
-
-        for transaction in data['account_transactions']:
-            transaction_version = transaction['transaction_version']
-            user_tx = transaction['user_transaction']
-            sender = user_tx['sender']
-
-            # Adding user transaction node
-            user_tx_node_id = f"User Transaction: {transaction_version}"
-            nodes.append(
-                {'id': user_tx_node_id, 'label': f"Transaction: {transaction_version}", 'title': f"Sender: {sender}"})
-            edges.append({'source': f"Sender: {sender}", 'target': user_tx_node_id})
-
-            # Adding coin activities
-            for activity in transaction['coin_activities']:
-                activity_node_id = f"Coin Activity: {transaction_version}:{activity['activity_type']}"
-                nodes.append({'id': activity_node_id, 'label': f"{activity['activity_type']} ({activity['amount']})",
-                              'title': f"Coin Type: {activity['coin_type']}"})
-                edges.append({'source': user_tx_node_id, 'target': activity_node_id})
-
-            # Adding token activities
-            for token_activity in transaction['token_activities']:
-                token_activity_node_id = f"Token Activity: {token_activity['name']} ({token_activity['token_amount']})"
-                nodes.append({'id': token_activity_node_id, 'label': f"{token_activity['name']}",
-                              'title': f"From: {token_activity['from_address']} To: {token_activity['to_address']}"})
-                edges.append({'source': user_tx_node_id, 'target': token_activity_node_id})
-
-            # Adding fungible asset activities
-            for fungible_activity in transaction['fungible_asset_activities']:
-                fungible_activity_node_id = f"Fungible Activity: {fungible_activity['asset_type']} ({fungible_activity['amount']})"
-                nodes.append({'id': fungible_activity_node_id, 'label': f"{fungible_activity['asset_type']}",
-                              'title': f"Amount: {fungible_activity['amount']}"})
-                edges.append({'source': user_tx_node_id, 'target': fungible_activity_node_id})
-
-        # Creating the network graph
-        graph = Network(height="800px", width="100%", notebook=True)
-
-        for node in nodes:
-            graph.add_node(node['id'], label=node['label'], title=node['title'])
-
-        for edge in edges:
-            graph.add_edge(edge['source'], edge['target'])
-
-        # Using a temporary file to display the graph
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:
-            graph.show(tmpfile.name)
-            tmpfile.seek(0)
-            html_content = tmpfile.read().decode("utf-8")
-
-        return html_content
-
-
 def create_coin_activities_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=10)
-    submit_button = st.button('Submit')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query with user input
@@ -195,7 +64,7 @@ def create_coin_activities_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -256,22 +125,16 @@ def create_collection_datas_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Submit')
+    submit_button = st.button('Sumit')
 
     if submit_button:
-        # Constructing the query with user input
+        # Constructing the query
         query = f"""
         {{
           current_collection_datas(limit: {limit}, offset: {offset}) {{
             collection_data_id_hash
             collection_name
             creator_address
-            description
-            description_mutable
-            last_transaction_timestamp
-            last_transaction_version
-            maximum
-            maximum_mutable
             metadata_uri
             supply
             table_handle
@@ -281,7 +144,7 @@ def create_collection_datas_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -299,20 +162,14 @@ def create_collection_datas_graph():
         edges = []
 
         for collection in data['current_collection_datas']:
-            collection_id = collection['collection_data_id_hash']
-            collection_name = collection['collection_name']
-            creator_address = collection['creator_address']
+            collection_node_id = f"Collection: {collection['collection_data_id_hash']}"
+            nodes.append({'id': collection_node_id, 'label': collection['collection_name'],
+                          'title': f"Creator: {collection['creator_address']}"})
 
-            # Adding collection node
-            collection_node_id = f"Collection: {collection_id}"
-            nodes.append({'id': collection_node_id, 'label': collection_name, 'title': f"Creator: {creator_address}"})
-
-            # Adding additional properties as nodes
-            nodes.append(
-                {'id': f"Description: {collection_id}", 'label': collection['description'], 'title': "Description"})
-            nodes.append({'id': f"Supply: {collection_id}", 'label': str(collection['supply']), 'title': "Supply"})
-            edges.append({'source': collection_node_id, 'target': f"Description: {collection_id}"})
-            edges.append({'source': collection_node_id, 'target': f"Supply: {collection_id}"})
+            # Adding creator node
+            creator_node_id = f"Creator: {collection['creator_address']}"
+            nodes.append({'id': creator_node_id, 'label': collection['creator_address'], 'title': "Creator Address"})
+            edges.append({'source': collection_node_id, 'target': creator_node_id})
 
         # Creating the network graph
         graph = Network(height="800px", width="100%", notebook=True)
@@ -334,7 +191,7 @@ def create_collection_datas_graph():
 
 def create_delegator_balances_graph():
     # User input for the query parameters
-    submit_button = st.button('Fetch Delegator Balances')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -367,7 +224,7 @@ def create_delegator_balances_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -433,7 +290,7 @@ def create_token_datas_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Token Data')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -443,34 +300,17 @@ def create_token_datas_graph():
             collection_data_id_hash
             collection_name
             creator_address
-            description
-            description_mutable
-            largest_property_version
-            last_transaction_timestamp
-            last_transaction_version
-            maximum
             metadata_uri
             name
             payee_address
-            properties_mutable
-            royalty_mutable
             token_data_id_hash
-            royalty_points_denominator
-            royalty_points_numerator
             supply
             uri_mutable
             current_collection_data {{
               collection_data_id_hash
               collection_name
-              description
               creator_address
-              last_transaction_timestamp
-              last_transaction_version
-              maximum
               metadata_uri
-              maximum_mutable
-              supply
-              table_handle
               uri_mutable
             }}
           }}
@@ -478,7 +318,7 @@ def create_token_datas_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -496,29 +336,20 @@ def create_token_datas_graph():
         edges = []
 
         for token in data['current_token_datas']:
-            token_id = token['token_data_id_hash']
-            collection_name = token['collection_name']
-            creator_address = token['creator_address']
-
-            # Adding token node
-            token_node_id = f"Token: {token_id}"
-            nodes.append({'id': token_node_id, 'label': token['name'], 'title': f"Creator: {creator_address}"})
+            token_node_id = f"Token: {token['token_data_id_hash']}"
+            nodes.append(
+                {'id': token_node_id, 'label': token['name'], 'title': f"Collection: {token['collection_name']}"})
 
             # Adding collection node
             collection_node_id = f"Collection: {token['collection_data_id_hash']}"
-            nodes.append({'id': collection_node_id, 'label': collection_name, 'title': "Collection Metadata"})
+            nodes.append({'id': collection_node_id, 'label': token['collection_name'],
+                          'title': f"Creator: {token['creator_address']}"})
             edges.append({'source': token_node_id, 'target': collection_node_id})
 
-            # Adding additional properties as nodes
-            nodes.append({'id': f"Description: {token_id}", 'label': token['description'], 'title': "Description"})
-            edges.append({'source': token_node_id, 'target': f"Description: {token_id}"})
-
-            # Adding current collection data node
-            current_collection = token['current_collection_data']
-            current_collection_node_id = f"Current Collection: {current_collection['collection_data_id_hash']}"
-            nodes.append({'id': current_collection_node_id, 'label': current_collection['collection_name'],
-                          'title': "Current Collection Metadata"})
-            edges.append({'source': token_node_id, 'target': current_collection_node_id})
+            # Adding creator node
+            creator_node_id = f"Creator: {token['creator_address']}"
+            nodes.append({'id': creator_node_id, 'label': token['creator_address'], 'title': "Creator Address"})
+            edges.append({'source': collection_node_id, 'target': creator_node_id})
 
         # Creating the network graph
         graph = Network(height="800px", width="100%", notebook=True)
@@ -542,7 +373,7 @@ def create_token_ownerships_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Token Ownerships')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -563,23 +394,17 @@ def create_token_ownerships_graph():
               collection_data_id_hash
               collection_name
               creator_address
-              maximum
               metadata_uri
-              maximum_mutable
-              table_handle
               uri_mutable
             }}
             current_token_data {{
               collection_data_id_hash
               collection_name
               creator_address
-              largest_property_version
               metadata_uri
               payee_address
-              properties_mutable
               uri_mutable
               token_data_id_hash
-              supply
               current_collection_data {{
                 collection_data_id_hash
                 collection_name
@@ -593,7 +418,7 @@ def create_token_ownerships_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -611,34 +436,26 @@ def create_token_ownerships_graph():
         edges = []
 
         for ownership in data['current_token_ownerships']:
-            owner_address = ownership['owner_address']
-            token_id = ownership['current_token_data']['token_data_id_hash']
-            collection_name = ownership['collection_name']
-            creator_address = ownership['creator_address']
-
-            # Adding token ownership node
-            ownership_node_id = f"Ownership: {owner_address}_{token_id}"
-            nodes.append({'id': ownership_node_id, 'label': ownership['name'],
-                          'title': f"Owner: {owner_address}, Amount: {ownership['amount']}"})
+            ownership_node_id = f"Ownership: {ownership['current_token_data']['token_data_id_hash']}"
+            nodes.append(
+                {'id': ownership_node_id, 'label': ownership['name'], 'title': f"Owner: {ownership['owner_address']}"})
 
             # Adding collection node
             collection_node_id = f"Collection: {ownership['collection_data_id_hash']}"
-            nodes.append({'id': collection_node_id, 'label': collection_name, 'title': f"Creator: {creator_address}"})
+            nodes.append({'id': collection_node_id, 'label': ownership['collection_name'],
+                          'title': f"Creator: {ownership['creator_address']}"})
             edges.append({'source': ownership_node_id, 'target': collection_node_id})
 
-            # Adding current collection data node
-            current_collection = ownership['current_collection_data']
-            current_collection_node_id = f"Current Collection: {current_collection['collection_data_id_hash']}"
-            nodes.append({'id': current_collection_node_id, 'label': current_collection['collection_name'],
-                          'title': "Current Collection Metadata"})
-            edges.append({'source': ownership_node_id, 'target': current_collection_node_id})
+            # Adding creator node
+            creator_node_id = f"Creator: {ownership['creator_address']}"
+            nodes.append({'id': creator_node_id, 'label': ownership['creator_address'], 'title': "Creator Address"})
+            edges.append({'source': collection_node_id, 'target': creator_node_id})
 
             # Adding current token data node
-            current_token = ownership['current_token_data']
-            token_data_node_id = f"Token Data: {token_id}"
-            nodes.append({'id': token_data_node_id, 'label': current_token['name'],
-                          'title': f"Creator: {current_token['creator_address']}"})
-            edges.append({'source': ownership_node_id, 'target': token_data_node_id})
+            token_node_id = f"Token: {ownership['current_token_data']['token_data_id_hash']}"
+            nodes.append({'id': token_node_id, 'label': ownership['current_token_data']['collection_name'],
+                          'title': f"Payee: {ownership['current_token_data']['payee_address']}"})
+            edges.append({'source': ownership_node_id, 'target': token_node_id})
 
         # Creating the network graph
         graph = Network(height="800px", width="100%", notebook=True)
@@ -662,7 +479,7 @@ def create_delegator_pools_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Delegator Pools')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -691,7 +508,7 @@ def create_delegator_pools_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -758,7 +575,7 @@ def create_events_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Events')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -779,7 +596,7 @@ def create_events_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -828,7 +645,7 @@ def create_fungible_asset_balances_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Fungible Asset Balances')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -861,7 +678,7 @@ def create_fungible_asset_balances_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -921,15 +738,13 @@ def create_token_activities_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Token Activities')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
         query = f"""
         {{
           token_activities(limit: {limit}, offset: {offset}) {{
-            coin_amount
-            coin_type
             collection_data_id_hash
             collection_name
             creator_address
@@ -970,7 +785,7 @@ def create_token_activities_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -990,7 +805,7 @@ def create_token_activities_graph():
         for activity in data['token_activities']:
             activity_node_id = f"Activity: {activity['transaction_version']}_{activity['event_index']}"
             nodes.append({'id': activity_node_id, 'label': activity['name'],
-                          'title': f"From: {activity['from_address']}, To: {activity['to_address']}, Coin Amount: {activity['coin_amount']}"})
+                          'title': f"From: {activity['from_address']}, To: {activity['to_address']}, "})
 
             # Adding from address node
             from_node_id = f"From: {activity['from_address']}"
@@ -1003,16 +818,16 @@ def create_token_activities_graph():
             edges.append({'source': activity_node_id, 'target': to_node_id})
 
             # Adding current token data node
-            token_data = activity['current_token_data']
+            token_data = activity
             token_data_node_id = f"Token Data: {token_data['token_data_id_hash']}"
             nodes.append({'id': token_data_node_id, 'label': token_data['collection_name'], 'title': "Token Metadata"})
             edges.append({'source': activity_node_id, 'target': token_data_node_id})
 
             # Adding collection data node
-            collection_data = token_data['current_collection_data']
-            collection_node_id = f"Collection: {collection_data['collection_data_id_hash']}"
+            # collection_data = token_data['current_collection_data']
+            collection_node_id = f"Collection: {token_data['collection_data_id_hash']}"
             nodes.append(
-                {'id': collection_node_id, 'label': collection_data['collection_name'], 'title': "Collection Metadata"})
+                {'id': collection_node_id, 'label': token_data['collection_name'], 'title': "Collection Metadata"})
             edges.append({'source': token_data_node_id, 'target': collection_node_id})
 
         # Creating the network graph
@@ -1037,7 +852,7 @@ def create_tokens_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch Tokens')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -1058,7 +873,7 @@ def create_tokens_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -1112,7 +927,7 @@ def create_user_transactions_graph():
     # User input for the query parameters
     limit = st.number_input("Number of records to fetch", min_value=1, max_value=50, value=10)
     offset = st.number_input("Offset for records", min_value=0, value=0)
-    submit_button = st.button('Fetch User Transactions')
+    submit_button = st.button('Sumit')
 
     if submit_button:
         # Constructing the query
@@ -1135,7 +950,7 @@ def create_user_transactions_graph():
         """
 
         # Updated URL for the GraphQL endpoint (replace with the correct one)
-        url = "https://your.graphql.endpoint.here"  # Replace with your actual endpoint
+        url = "https://aptos-mainnet.nodit.io/Skr_t-4IDJOOcT1v9o-TX7KWQurJ~9WU/v1/graphql"  # Replace with your actual endpoint
         response = requests.post(url, json={'query': query})
 
         if response.status_code == 200:
@@ -1184,17 +999,14 @@ def graph():
     st.markdown("### Select an Option")
     option = st.radio(
         "Select Choice",
-        ("AccountTransactions", "CoinActivities", "CollectionData", "CurrentDelegatorBalances",
+        ("CoinActivities", "CollectionData", "CurrentDelegatorBalances",
          "CurrentTokenDatas", "CurrentTokenOwnership", "DelegatorPools", "Events", "FungibleAssetBalances",
          "TokenActivities", "Tokens", "UserTransactions"),
         index=0,
         horizontal=True
     )
 
-    if option == 'AccountTransactions':
-        html_content = create_account_transactions_graph()
-        st.components.v1.html(html_content, height=800)
-    elif option == 'CoinActivities':
+    if option == 'CoinActivities':
         html_content = create_coin_activities_graph()
         st.components.v1.html(html_content, height=800)
     elif option == 'CollectionData':
