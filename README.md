@@ -23,11 +23,11 @@ The DeFi Protocols tab offers detailed analytics on the decentralized finance pr
 
 - **LiquidSwap:** Aptos' leading decentralized exchange (DEX), known for low fees and deep liquidity. AptosLytics tracks liquidity depth, trading volumes, and slippage rates, delivering valuable insights to liquidity providers and traders.
   
-- **Pontem Network:** A wallet and decentralized exchange platform integrated with Aptos. AptosLytics monitors Pontem’s adoption metrics, including user activity, transaction counts, and asset management.
+- **Cellana Finance:** A wallet and decentralized exchange platform integrated with Aptos. AptosLytics monitors Pontem’s adoption metrics, including user activity, transaction counts, and asset management.
 
 - **Thala Labs:** A decentralized stablecoin platform that allows users to mint stablecoins using various collateral. AptosLytics provides detailed insights into minting volumes, collateralization ratios, and the stability of Thala Labs' ecosystem.
 
-- **Tsunami Finance:** A derivatives trading platform built on Aptos. AptosLytics offers detailed analytics on derivatives volumes, pricing trends, and liquidity across various asset classes.
+- **Pancake:** A derivatives trading platform built on Aptos. AptosLytics offers detailed analytics on derivatives volumes, pricing trends, and liquidity across various asset classes.
   
 - **Ongoing Expansion:** We continuously expand our protocol coverage, providing detailed analysis on performance, fees, and scalability for each new DeFi protocol in the Aptos ecosystem.
 
