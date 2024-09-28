@@ -1,11 +1,7 @@
 import streamlit as st
-
-from defi import defi
-from dex import dex
+from graph import graph
 from home import home
-from meme import coin
-from nfts import nfts
-from projects import projects
+
 
 # Set page configuration
 st.set_page_config(page_title="Aptoslytics", page_icon="🚛", layout="wide")
@@ -46,19 +42,10 @@ with col2:
     # Apply the golden-title class for golden text
     new_title = '<p class="golden-title">APTOSLYTICS</p>'
     st.markdown(new_title, unsafe_allow_html=True)
-    section = st.radio("Navigate to", ["Home", "NFTs", "Top Projects", "Dexs", "Defi", "Meme Coins", "Explore"], horizontal=True)
-
+    section = st.radio("Navigate to", ["Home", "Platforms", "ETH_Stake", "Fees", "Growth", "Holders", "Explore"], horizontal=True)
 
 
 if section == 'Home':
     home()
-elif section == 'Top Projects':
-    projects()
-elif section == 'NFTs':
-    nfts()
-elif section == 'Dexs':
-    dex()
-elif section == 'Defi':
-    defi()
-elif section == 'Meme Coins':
-    coin()
+elif section == 'Explore':
+    graph()
