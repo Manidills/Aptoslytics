@@ -48,35 +48,6 @@ def generate_summary_p(df):
 
 
 
-
-# Define the API endpoint and your API key
-API_URL = "https://api.dune.com/api/v1/query/{query_id}/results/csv"
-API_KEY = "NJoI9Yz7jPHhaaOmtalgfARPLI9p0x8H"
-
-def fetch_data(api_url, api_key):
-    # Prepare headers with API key
-    headers = {
-        "X-Dune-Api-Key": api_key
-    }
-
-    # Make GET request to the API URL with headers
-    response = requests.get(api_url, headers=headers)
-    if response.status_code == 200:
-        # Read CSV data into pandas DataFrame
-        df = pd.read_csv(StringIO(response.text))
-        return df
-    else:
-        st.error(f"Failed to load data: {response.status_code} - {response.reason}")
-        return None
-    
-def data(query_id):
-    query_id = query_id  # Replace with actual query ID
-    api_url = API_URL.format(query_id=query_id)
-
-    df = fetch_data(api_url, API_KEY)
-
-    if df is not None:
-        return df
     
 
 def home():
